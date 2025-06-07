@@ -3,21 +3,54 @@ import { formatCurrency } from '@/lib/utils'
 import { getChartColors } from '@/lib/utils'
 
 export const LTVBySourceLine = ({ data, onAction }) => {
-  // Group data by source for line chart
+  // Reshape data for proper line chart rendering
+  const reshapeData = () => {
+    if (!data || data.length === 0) return []
+    
+    // First, let's get all unique dates and sources
+    const uniqueDates = [...new Set(data.map(d => d.date))].sort()
+    const sources = [...new Set(data.map(d => d.source))]
+    
+    // Create a map for quick lookup
+    const dataMap = {}
+    data.forEach(item => {
+      const key = `${item.date}_${item.source}`
+      dataMap[key] = item
+    })
+    
+    // Build the chart data with all dates and all sources
+    return uniqueDates.map(date => {
+      const row = { 
+        date,
+        formattedDate: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      }
+      
+      sources.forEach(source => {
+        const key = `${date}_${source}`
+        const dataPoint = dataMap[key]
+        if (dataPoint) {
+          row[`${source}_LTV30`] = dataPoint.LTV30
+          row[`${source}_LTV60`] = dataPoint.LTV60  
+          row[`${source}_LTV90`] = dataPoint.LTV90
+        }
+      })
+      
+      return row
+    })
+  }
+
+  const chartData = reshapeData()
   const sources = [...new Set(data.map(d => d.source))]
   const colors = getChartColors()
   
-  const handleLineClick = (data, index) => {
-    if (data && data.activePayload) {
-      const clickedData = data.activePayload[0].payload
+  const handleLineClick = (chartData, index) => {
+    if (chartData && chartData.activePayload) {
+      const clickedData = chartData.activePayload[0].payload
       const cohort = {
         type: 'ltv_source',
-        source: data.activeLabel,
         date: clickedData.date,
-        LTV30: clickedData.LTV30,
-        LTV60: clickedData.LTV60,
-        LTV90: clickedData.LTV90,
-        description: `LTV cohort for ${data.activeLabel} source`
+        sources: sources,
+        description: `LTV cohort for ${clickedData.formattedDate}`
       }
       onAction(cohort)
     }
@@ -25,14 +58,21 @@ export const LTVBySourceLine = ({ data, onAction }) => {
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
+      // Find the data point to get formatted date
+      const dataPoint = chartData.find(d => d.date === label)
+      const displayDate = dataPoint ? dataPoint.formattedDate : label
+      
       return (
         <div className="bg-popover border border-border rounded-lg p-3 shadow-lg">
-          <p className="font-semibold mb-2">{label}</p>
-          {payload.map((entry, index) => (
-            <p key={index} style={{ color: entry.color }}>
-              {entry.name}: {formatCurrency(entry.value)}
-            </p>
-          ))}
+          <p className="font-semibold mb-2">{displayDate}</p>
+          {payload.map((entry, index) => {
+            const sourceName = entry.dataKey.replace('_LTV90', '')
+            return (
+              <p key={index} style={{ color: entry.color }}>
+                {sourceName}: {formatCurrency(entry.value)}
+              </p>
+            )
+          })}
         </div>
       )
     }
@@ -56,15 +96,24 @@ export const LTVBySourceLine = ({ data, onAction }) => {
       
       <ResponsiveContainer width="100%" height={400}>
         <LineChart
-          data={data}
-          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+          data={chartData}
+          margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
           onClick={handleLineClick}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
           <XAxis 
             dataKey="date" 
             tick={{ fontSize: 12 }}
+            tickFormatter={(value) => {
+              // Use the pre-formatted date from our data
+              const dataPoint = chartData.find(d => d.date === value)
+              return dataPoint ? dataPoint.formattedDate : value
+            }}
             stroke="hsl(var(--muted-foreground))"
+            angle={-45}
+            textAnchor="end"
+            height={80}
+            interval="preserveStartEnd"
           />
           <YAxis 
             tickFormatter={formatCurrency}
@@ -79,13 +128,13 @@ export const LTVBySourceLine = ({ data, onAction }) => {
             <Line
               key={source}
               type="monotone"
-              dataKey="LTV90"
-              data={data.filter(d => d.source === source)}
+              dataKey={`${source}_LTV90`}
               stroke={colors[index % colors.length]}
               strokeWidth={2}
               name={source}
               dot={{ fill: colors[index % colors.length], strokeWidth: 2, r: 3 }}
               activeDot={{ r: 5, fill: colors[index % colors.length] }}
+              connectNulls={false}
               style={{ cursor: 'pointer' }}
             />
           ))}

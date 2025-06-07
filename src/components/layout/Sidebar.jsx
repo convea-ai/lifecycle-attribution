@@ -8,7 +8,8 @@ import {
   Brain,
   ChevronLeft,
   ChevronRight,
-  LayoutDashboard
+  LayoutDashboard,
+  Target
 } from 'lucide-react'
 
 const navigationItems = [
@@ -47,6 +48,12 @@ const navigationItems = [
     label: 'Retention Intelligence',
     icon: Brain,
     href: '#retention'
+  },
+  {
+    id: 'action-plan',
+    label: 'Action Plan',
+    icon: Target,
+    href: '#action-plan'
   }
 ]
 
