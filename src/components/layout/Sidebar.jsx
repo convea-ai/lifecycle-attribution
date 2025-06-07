@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 import { 
   BarChart3, 
   TrendingUp, 
-  Funnel, 
+  Filter, 
   DollarSign, 
   Brain,
   ChevronLeft,
@@ -33,7 +33,7 @@ const navigationItems = [
   {
     id: 'funnel',
     label: 'Activation Funnel',
-    icon: Funnel,
+    icon: Filter,
     href: '#funnel'
   },
   {

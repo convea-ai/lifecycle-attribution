@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { Sidebar } from '@/components/layout/Sidebar'
-import { Header } from '@/components/layout/Header'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { useFilters } from '@/hooks/useFilters'
 import { useLifecycleData } from '@/hooks/useLifecycleData'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Sidebar } from '@/components/layout/Sidebar'
+import { Header } from '@/components/layout/Header'
 
 // Import all chart components
 import { SankeyDiagram } from '@/components/charts/SankeyDiagram'
